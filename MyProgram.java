@@ -20,7 +20,7 @@ public class MyProgram {
 
 	private static void naiveBayes(String learn, String test) throws FileNotFoundException {
 		Scanner learnscan = new Scanner(new File(learn));
-        learnscan.useDelimiter(",");
+        learnscan.useDelimiter(",|\\n");
         
         //Finding the sum of each value, according to the result
         double[] meanyes = new double[8];
@@ -30,25 +30,33 @@ public class MyProgram {
         double[] sdno = new double[8];
         int totalyes = 0;
         int totalno = 0;
+		int total = 0;
         String result;
+        System.out.println("scanning nums");
         while (learnscan.hasNext()){
         	for (int i = 0; i < 8; ++i){
         		curr[i] = Double.parseDouble(learnscan.next());
         	}
         	result = learnscan.next();
-        	if (result.matches("yes")){
+        	if (result.matches("yes\r")){
         		for (int i = 0; i < 8; ++i){
         			meanyes[i] = meanyes[i] + curr[i];
-        			totalyes++;
+        			if (i == 0){
+        				totalyes++;
+        			}
         		}
         	} else {
         		for (int i = 0; i < 8; ++i){
         			meanno[i] = meanno[i] + curr[i];
-        			totalno++;
+        			if (i == 0){
+        				totalno++;
+        			}
         		}
         	}
+        	total++;
         }
         
+        System.out.println("calcing means");
         //Calculate means
         for (int i = 0; i < 8; ++i){
         	meanyes[i] = meanyes[i]/totalyes;
@@ -56,23 +64,21 @@ public class MyProgram {
         }
         learnscan.close();
         learnscan = new Scanner(new File(learn));
-        learnscan.useDelimiter(",");
-        
+        learnscan.useDelimiter(",|\\n");
+        System.out.println("calcing sds");
         //Standard deviation
         while (learnscan.hasNext()){
         	for (int i = 0; i < 8; ++i){
         		curr[i] = Double.parseDouble(learnscan.next());
         	}
         	result = learnscan.next();
-        	if (result.matches("yes")){
+        	if (result.matches("yes\r")){
         		for (int i = 0; i < 8; ++i){
         			sdyes[i] = Math.pow((curr[i] - meanyes[i]), 2);
-        			totalyes++;
         		}
         	} else {
         		for (int i = 0; i < 8; ++i){
         			sdno[i] = Math.pow((curr[i] - meanno[i]), 2);
-        			totalno++;
         		}
         	}
         }  
@@ -86,9 +92,9 @@ public class MyProgram {
         
         //Testing time baby
         Scanner testscan = new Scanner(new File(test));
-        testscan.useDelimiter(",");
+        testscan.useDelimiter(",|\\n");
         //Probability of yes or no
-        double Pyes = totalyes/(totalyes+totalno);
+        double Pyes = (double) totalyes/total;
         double Pno = 1-Pyes;
         double yesvalue;
         double novalue;
