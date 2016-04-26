@@ -20,7 +20,7 @@ public class MyProgram {
 
 	private static void naiveBayes(String learn, String test) throws FileNotFoundException {
 		Scanner learnscan = new Scanner(new File(learn));
-        learnscan.useDelimiter(",|\\n");
+        learnscan.useDelimiter(",|\r\n");
         
         //Finding the sum of each value, according to the result
         double[] meanyes = new double[8];
@@ -32,13 +32,12 @@ public class MyProgram {
         int totalno = 0;
 		int total = 0;
         String result;
-        System.out.println("scanning nums");
         while (learnscan.hasNext()){
         	for (int i = 0; i < 8; ++i){
         		curr[i] = Double.parseDouble(learnscan.next());
         	}
         	result = learnscan.next();
-        	if (result.matches("yes\r")){
+        	if (result.matches("yes")){
         		for (int i = 0; i < 8; ++i){
         			meanyes[i] = meanyes[i] + curr[i];
         			if (i == 0){
@@ -56,7 +55,6 @@ public class MyProgram {
         	total++;
         }
         
-        System.out.println("calcing means");
         //Calculate means
         for (int i = 0; i < 8; ++i){
         	meanyes[i] = meanyes[i]/totalyes;
@@ -64,15 +62,14 @@ public class MyProgram {
         }
         learnscan.close();
         learnscan = new Scanner(new File(learn));
-        learnscan.useDelimiter(",|\\n");
-        System.out.println("calcing sds");
+        learnscan.useDelimiter(",|\r\n");
         //Standard deviation
         while (learnscan.hasNext()){
         	for (int i = 0; i < 8; ++i){
         		curr[i] = Double.parseDouble(learnscan.next());
         	}
         	result = learnscan.next();
-        	if (result.matches("yes\r")){
+        	if (result.matches("yes")){
         		for (int i = 0; i < 8; ++i){
         			sdyes[i] = Math.pow((curr[i] - meanyes[i]), 2);
         		}
@@ -92,7 +89,7 @@ public class MyProgram {
         
         //Testing time baby
         Scanner testscan = new Scanner(new File(test));
-        testscan.useDelimiter(",|\\n");
+        testscan.useDelimiter(",|\r\n");
         //Probability of yes or no
         double Pyes = (double) totalyes/total;
         double Pno = 1-Pyes;
@@ -121,6 +118,11 @@ public class MyProgram {
 	}
 
 	private static double helpfulFunction(double currtestval, double sd, double mean) {
-		return (1/(sd*Math.sqrt(2*Math.PI))*Math.pow(Math.E, (((currtestval-mean)*(currtestval-mean))/ 2*sd*sd)));
+	
+		double frac = (((currtestval-mean)*(currtestval-mean))*-1/ 2*sd*sd);
+		double eVal = Math.pow(Math.E, frac);
+
+		double val = 1/(sd*Math.sqrt(2*Math.PI)) * eVal;
+		return val;
 	}
 }
