@@ -1,5 +1,7 @@
 # don't bother including IntelliJ settings
 .idea
+out
+*.iml
 
 # Windows image file caches
 Thumbs.db
