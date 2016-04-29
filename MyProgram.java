@@ -55,7 +55,6 @@ public class MyProgram {
         for (int i = 0; i < 8; ++i){
         	meanyes[i] = meanyes[i]/totalyes;
         	meanno[i] = meanno[i]/totalno;
-        	System.out.println(meanyes[i] + "  " + meanno[i]);
         }
         
         scanner = new Scanner(new File(learn));
@@ -86,7 +85,6 @@ public class MyProgram {
         //Testing time baby
         scanner = new Scanner(new File(test));
         scanner.useDelimiter(",|\r\n");
-        //Probability of yes or no
         double Pyes = (double) ((double) totalyes/(double) total);
         double Pno = 1-Pyes;
         double yesvalue;
@@ -98,12 +96,13 @@ public class MyProgram {
         	for(int i = 0; i < 8; ++i){
         		currtestval = Double.parseDouble(scanner.next());
         		yesvalue = yesvalue * probDensityFunc(currtestval, sdyes[i], meanyes[i]);
-        		novalue = novalue * probDensityFunc(currtestval, sdno[i], meanno[i]);
+        		novalue = novalue * probDensityFunc(currtestval, sdno[i], meanno[i]); 
         	}
         	if (novalue > yesvalue){
         		System.out.println("no");
         	} else {
         		System.out.println("yes");
+
         	}
         }
         scanner.close();
@@ -113,9 +112,10 @@ public class MyProgram {
 
 	//currently underflowing, woo!
 	private static double probDensityFunc(double currtestval, double sd, double mean) {
-		double power = (((currtestval-mean)*(currtestval-mean))/ 2*sd*sd);
+		double power = (((currtestval-mean)*(currtestval-mean))/ (2*sd*sd));
 		double frac = 1/(sd*Math.sqrt(2*Math.PI));
 		double result = frac * Math.pow(Math.E, -power);
+		System.out.println(result);
 		return result;
 		
 	}
