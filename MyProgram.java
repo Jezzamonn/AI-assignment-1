@@ -19,8 +19,8 @@ public class MyProgram {
 	}
 
 	private static void naiveBayes(String learn, String test) throws FileNotFoundException {
-		Scanner learnscan = new Scanner(new File(learn));
-        learnscan.useDelimiter(",|\r\n");
+		Scanner scanner = new Scanner(new File(learn));
+        scanner.useDelimiter(",|\r\n");
         
         //Finding the sum of each value, according to the result
         double[] meanyes = new double[8];
@@ -32,25 +32,21 @@ public class MyProgram {
         int totalno = 0;
 		int total = 0;
         String result;
-        while (learnscan.hasNext()){
+        while (scanner.hasNext()){
         	for (int i = 0; i < 8; ++i){
-        		curr[i] = Double.parseDouble(learnscan.next());
+        		curr[i] = Double.parseDouble(scanner.next());
         	}
-        	result = learnscan.next();
+        	result = scanner.next();
         	if (result.matches("yes")){
         		for (int i = 0; i < 8; ++i){
         			meanyes[i] = meanyes[i] + curr[i];
-        			if (i == 0){
-        				totalyes++;
-        			}
         		}
+        		totalyes++;
         	} else {
         		for (int i = 0; i < 8; ++i){
         			meanno[i] = meanno[i] + curr[i];
-        			if (i == 0){
-        				totalno++;
-        			}
         		}
+        		totalno++;
         	}
         	total++;
         }
@@ -59,16 +55,18 @@ public class MyProgram {
         for (int i = 0; i < 8; ++i){
         	meanyes[i] = meanyes[i]/totalyes;
         	meanno[i] = meanno[i]/totalno;
+        	System.out.println(meanyes[i] + "  " + meanno[i]);
         }
-        learnscan.close();
-        learnscan = new Scanner(new File(learn));
-        learnscan.useDelimiter(",|\r\n");
+        
+        scanner = new Scanner(new File(learn));
+        scanner.useDelimiter(",|\r\n");
+        
         //Standard deviation
-        while (learnscan.hasNext()){
+        while (scanner.hasNext()){
         	for (int i = 0; i < 8; ++i){
-        		curr[i] = Double.parseDouble(learnscan.next());
+        		curr[i] = Double.parseDouble(scanner.next());
         	}
-        	result = learnscan.next();
+        	result = scanner.next();
         	if (result.matches("yes")){
         		for (int i = 0; i < 8; ++i){
         			sdyes[i] = Math.pow((curr[i] - meanyes[i]), 2);
@@ -82,47 +80,43 @@ public class MyProgram {
         for (int i = 0; i < 8; ++i){
         	sdyes[i] = Math.sqrt(sdyes[i]/(totalyes-1));
         	sdno[i] = Math.sqrt(sdno[i]/(totalno-1));
+        	
         }
-        learnscan.close();
-        
-
         
         //Testing time baby
-        Scanner testscan = new Scanner(new File(test));
-        testscan.useDelimiter(",|\r\n");
+        scanner = new Scanner(new File(test));
+        scanner.useDelimiter(",|\r\n");
         //Probability of yes or no
-        double Pyes = (double) totalyes/total;
+        double Pyes = (double) ((double) totalyes/(double) total);
         double Pno = 1-Pyes;
         double yesvalue;
         double novalue;
         double currtestval;
-        while (testscan.hasNext()){
-        	yesvalue = 1;
-        	novalue = 1;
+        while (scanner.hasNext()){
+        	yesvalue = Pyes;
+        	novalue = Pno;
         	for(int i = 0; i < 8; ++i){
-        		currtestval = Double.parseDouble(testscan.next());
-        		yesvalue = yesvalue * helpfulFunction(currtestval, sdyes[i], meanyes[i]);
-        		novalue = novalue * helpfulFunction(currtestval, sdno[i], meanno[i]);
+        		currtestval = Double.parseDouble(scanner.next());
+        		yesvalue = yesvalue * probDensityFunc(currtestval, sdyes[i], meanyes[i]);
+        		novalue = novalue * probDensityFunc(currtestval, sdno[i], meanno[i]);
         	}
-        	yesvalue = yesvalue * Pyes;
-        	novalue = novalue * Pno;
         	if (novalue > yesvalue){
         		System.out.println("no");
         	} else {
         		System.out.println("yes");
         	}
         }
-        testscan.close();
+        scanner.close();
        
 		
 	}
 
-	private static double helpfulFunction(double currtestval, double sd, double mean) {
-	
-		double frac = (((currtestval-mean)*(currtestval-mean))*-1/ 2*sd*sd);
-		double eVal = Math.pow(Math.E, frac);
-
-		double val = 1/(sd*Math.sqrt(2*Math.PI)) * eVal;
-		return val;
+	//currently underflowing, woo!
+	private static double probDensityFunc(double currtestval, double sd, double mean) {
+		double power = (((currtestval-mean)*(currtestval-mean))/ 2*sd*sd);
+		double frac = 1/(sd*Math.sqrt(2*Math.PI));
+		double result = frac * Math.pow(Math.E, -power);
+		return result;
+		
 	}
 }
