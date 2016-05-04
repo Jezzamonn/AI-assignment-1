@@ -8,7 +8,7 @@ public class MyProgram {
 		if (args[2].matches("NB")) {
 			naiveBayes(args[0], args[1]);
 		} else {
-			int K = Integer.parseInt(args[2].substring(0, args[2].length() - 2)); // 2
+			int K = Integer.parseInt(args[2].substring(0, 1)); // 2
 																					// digit
 																					// K
 			kNearestNeighbour(K, args[0], args[1]);
@@ -21,7 +21,7 @@ public class MyProgram {
 		Scanner testscan = new Scanner(new File(test));
 		testscan.useDelimiter(",|\r\n");
 		Scanner learnscan = null;
-		String curres;
+		String curres = null;
 		double result;
 		double currdist;
 		double[] learnline = new double[8];
@@ -32,7 +32,7 @@ public class MyProgram {
 			}
 			learnscan = new Scanner(new File(learn));
 			learnscan.useDelimiter(",|\r\n");
-			
+
 			// the first k variables begin as the closest
 			for (int i = 0; i < k; ++i) {
 				for (int j = 0; j < 8; ++j) {
@@ -50,34 +50,40 @@ public class MyProgram {
 			// iterate all other lines
 			while (learnscan.hasNextLine()) {
 				for (int i = 0; i < 8; ++i) {
-					learnline[i] = Double.parseDouble(learnscan.next());
+					if (learnscan.hasNext()) {
+						learnline[i] = Double.parseDouble(learnscan.next());
+					}
 				}
-				currdist = calcDistance(learnline, testline);
-				curres = learnscan.next();
-				//does nothing if no new neighbours, severe time wasting atm
-				neighbours = newNeighbours(neighbours, currdist, curres, k); 
-			}
+					currdist = calcDistance(learnline, testline);
+					if (learnscan.hasNext()) {
+						curres = learnscan.next();
+						// does nothing if no new neighbours, severe time
+						// wasting atm
+						neighbours = newNeighbours(neighbours, currdist, curres, k);
+					}
 
-			// Print the result
-			int counter = 0; //keeps track of the yes to no ratio
-			for (int i = 0; i < k; ++i) {
-				if (neighbours[i][1] == 1) {
-					counter++;
+				}
+				// Print the result
+				int counter = 0; // keeps track of the yes to no ratio
+				for (int i = 0; i < k; ++i) {
+					if (neighbours[i][1] == 1) {
+						counter++;
+					} else {
+						counter--;
+					}
+				}
+				if (counter >= 0) {
+					System.out.println("yes");
 				} else {
-					counter--;
+					System.out.println("no");
 				}
-			}
-			if (counter >= 0) {
-				System.out.println("yes");
-			} else {
-				System.out.println("no");
-			}
-			
-		}
-		testscan.close();
-		learnscan.close();
 
-	}
+			}
+			testscan.close();
+			learnscan.close();
+		}
+
+
 
 	private static double[][] newNeighbours(double[][] neighbours, double currdist, String curres, int k) {
 		// find max dist
