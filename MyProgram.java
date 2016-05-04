@@ -50,17 +50,17 @@ public class MyProgram {
 			// iterate all other lines
 			while (learnscan.hasNextLine()) {
 				for (int i = 0; i < 8; ++i) {
-					if (learnscan.hasNext()) {
+					
 						learnline[i] = Double.parseDouble(learnscan.next());
-					}
+					
 				}
 					currdist = calcDistance(learnline, testline);
-					if (learnscan.hasNext()) {
+
 						curres = learnscan.next();
 						// does nothing if no new neighbours, severe time
 						// wasting atm
 						neighbours = newNeighbours(neighbours, currdist, curres, k);
-					}
+					
 
 				}
 				// Print the result
