@@ -25,12 +25,12 @@ public class MyProgram {
 		learnscan.useDelimiter(",|\r\n");
 		double curres;
 		double currdist;
-		double[] learnline = new double[9];
 		double[] testline = new double[8];
 
 		// Populate an array list with all the training inputs
 		ArrayList<double[]> learning = new ArrayList<double[]>();
 		while (learnscan.hasNext()) {
+			double[] learnline = new double[9];
 			for (int i = 0; i < 8; ++i) {
 				learnline[i] = Double.parseDouble(learnscan.next());
 			}
@@ -41,21 +41,20 @@ public class MyProgram {
 				learnline[8] = 0;
 			}
 			learning.add(learnline);
+			
 		}
 		learnscan.close();
 
+		//iterate the testing file
 		while (testscan.hasNext()) {
 			for (int i = 0; i < 8; ++i) {
 				testline[i] = Double.parseDouble(testscan.next());
-				//System.out.println(testscan.next());
 			}
 
 			// the first k variables begin as the closest
 			for (int i = 0; i < k; ++i) {
-				for (int j = 0; j < 9; ++j) {
-					learnline[j] = learning.get(i)[j];
-				}
-
+				double[] learnline = new double[9];
+				learnline = learning.get(i);
 				neighbours[i][1] = learnline[8];
 				neighbours[i][0] = calcDistance(learnline, testline);
 			}
@@ -106,9 +105,9 @@ public class MyProgram {
 	private static double calcDistance(double[] learnline, double[] testline) {
 		double distance = 0;
 		for (int i = 0; i < 8; ++i) {
-			distance = distance + Math.abs((learnline[i] - testline[i]));
+			distance = distance + ((learnline[i] - testline[i])*(learnline[i]-testline[i]));
 		}
-		return distance;
+		return Math.sqrt(distance);
 
 	}
 
