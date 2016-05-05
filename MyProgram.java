@@ -6,6 +6,14 @@ import java.util.Scanner;
 public class MyProgram {
 
 	public static void main(String[] args) throws FileNotFoundException {
+		if (args.length < 3) {
+			System.err.println(
+					"Invalid usage. You need to give 3 command line arguments. Here are some examples:\n" +
+					"$ java MyProgram pima.csv examples.csv NB\n" +
+					"$ java MyProgram pima-CFS.csv examples.csv 4NN\n\n" +
+					"Please do better next time.");
+			System.exit(1);
+		}
 		if (args[2].matches("NB")) {
 			naiveBayes(args[0], args[1]);
 		} else {
