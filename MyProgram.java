@@ -1,5 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class MyProgram {
@@ -9,8 +10,8 @@ public class MyProgram {
 			naiveBayes(args[0], args[1]);
 		} else {
 			int K = Integer.parseInt(args[2].substring(0, 1)); // 2
-																					// digit
-																					// K
+																// digit
+																// K
 			kNearestNeighbour(K, args[0], args[1]);
 		}
 	}
@@ -20,73 +21,73 @@ public class MyProgram {
 		// File learnfile = new File(learn);
 		Scanner testscan = new Scanner(new File(test));
 		testscan.useDelimiter(",|\r\n");
-		Scanner learnscan = null;
-		String curres = null;
-		double result;
+		Scanner learnscan = new Scanner(new File(learn));
+		learnscan.useDelimiter(",|\r\n");
+		double curres;
 		double currdist;
-		double[] learnline = new double[8];
+		double[] learnline = new double[9];
 		double[] testline = new double[8];
-		while (testscan.hasNextLine()) {
+
+		// Populate an array list with all the training inputs
+		ArrayList<double[]> learning = new ArrayList<double[]>();
+		while (learnscan.hasNext()) {
+			for (int i = 0; i < 8; ++i) {
+				learnline[i] = Double.parseDouble(learnscan.next());
+			}
+			String res = learnscan.next();
+			if (res.matches("yes")) {
+				learnline[8] = 1;
+			} else {
+				learnline[8] = 0;
+			}
+			learning.add(learnline);
+		}
+		learnscan.close();
+
+		while (testscan.hasNext()) {
 			for (int i = 0; i < 8; ++i) {
 				testline[i] = Double.parseDouble(testscan.next());
+				//System.out.println(testscan.next());
 			}
-			learnscan = new Scanner(new File(learn));
-			learnscan.useDelimiter(",|\r\n");
 
 			// the first k variables begin as the closest
 			for (int i = 0; i < k; ++i) {
-				for (int j = 0; j < 8; ++j) {
-					learnline[j] = Double.parseDouble(learnscan.next());
+				for (int j = 0; j < 9; ++j) {
+					learnline[j] = learning.get(i)[j];
 				}
-				String lres = learnscan.next();
-				if (lres.matches("yes")) {
-					result = 1;
-				} else {
-					result = 0;
-				}
-				neighbours[i][1] = result;
+
+				neighbours[i][1] = learnline[8];
 				neighbours[i][0] = calcDistance(learnline, testline);
 			}
-			
+
 			// iterate all other lines
-			while (learnscan.hasNextLine()) {
-				for (int i = 0; i < 8; ++i) {
-					
-						learnline[i] = Double.parseDouble(learnscan.next());
-					
-				}
-					currdist = calcDistance(learnline, testline);
-
-						curres = learnscan.next();
-						// does nothing if no new neighbours, severe time
-						// wasting atm
-						neighbours = newNeighbours(neighbours, currdist, curres, k);
-					
-
-				}
-				// Print the result
-				int counter = 0; // keeps track of the yes to no ratio
-				for (int i = 0; i < k; ++i) {
-					if (neighbours[i][1] == 1) {
-						counter++;
-					} else {
-						counter--;
-					}
-				}
-				if (counter >= 0) {
-					System.out.println("yes");
-				} else {
-					System.out.println("no");
-				}
-
+			for (int j = k; j < learning.size(); ++j){
+				currdist = calcDistance(learning.get(j), testline);
+				curres = learning.get(j)[8];
+				neighbours = newNeighbours(neighbours, currdist, curres, k);
 			}
-			testscan.close();
-			learnscan.close();
+
+			// Print the result
+			int counter = 0; // keeps track of the yes to no ratio
+			for (int i = 0; i < k; ++i) {
+				if (neighbours[i][1] == 1.0) {
+					counter++;
+				} else {
+					counter--;
+				}
+			}
+			if (counter >= 0) {
+				System.out.println("yes");
+			} else {
+				System.out.println("no");
+			}
+
 		}
+		testscan.close();
+		learnscan.close();
+	}
 
-
-
-	private static double[][] newNeighbours(double[][] neighbours, double currdist, String curres, int k) {
+	private static double[][] newNeighbours(double[][] neighbours, double currdist, double curres, int k) {
 		// find max dist
 		int maxpos = 0;
 		for (int i = 1; i < k; ++i) {
@@ -97,11 +98,7 @@ public class MyProgram {
 		// replace if necessary
 		if (neighbours[maxpos][0] > currdist) {
 			neighbours[maxpos][0] = currdist;
-			if (curres.matches("yes")) {
-				neighbours[maxpos][1] = 1;
-			} else {
-				neighbours[maxpos][1] = 0;
-			}
+			neighbours[maxpos][1] = curres;
 		}
 		return neighbours;
 	}
