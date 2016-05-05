@@ -38,7 +38,8 @@ public class MyProgram {
 				for (int j = 0; j < 8; ++j) {
 					learnline[j] = Double.parseDouble(learnscan.next());
 				}
-				if (learnscan.next().matches("yes")) {
+				String lres = learnscan.next();
+				if (lres.matches("yes")) {
 					result = 1;
 				} else {
 					result = 0;
@@ -202,10 +203,8 @@ public class MyProgram {
 		scanner.close();
 	}
 
-	// currently underflowing, woo!
 	private static double probDensityFunc(double currtestval, double sd, double mean) {
 		double power = (((currtestval - mean) * (currtestval - mean)) / (2 * sd * sd));
-		// System.out.println(power);
 		double frac = 1 / (sd * Math.sqrt(2 * Math.PI));
 		double result = frac * Math.pow(Math.E, -power);
 		return result;
