@@ -50,7 +50,7 @@ public class MyProgram {
 			String learn = readEntireFile(args[0]);
 			String test = readEntireFile(args[1]);
 			String firstLine = new Scanner(learn).nextLine();
-			int numFeatures = 1;
+			int numFeatures = 0;
 			for (char c : firstLine.toCharArray()) {
 				if (c == ',') {
 					numFeatures ++;
