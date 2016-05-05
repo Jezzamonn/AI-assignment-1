@@ -16,17 +16,23 @@ public class MyProgram {
 			System.exit(1);
 		}
 		if (args[0].equals("cross-validate")) {
-			FoldPair[] folds = getFolds();
+			int numFeatures = 8;
+			boolean useCFS = false;
+			if (args.length > 2 && args[2].equals("CFS")) {
+				useCFS = true;
+				numFeatures = 5;
+			}
+			FoldPair[] folds = getFolds(useCFS);
 			int numCorrect = 0;
 			int total = 0;
 			for (FoldPair fold : folds) {
 				ArrayList<String> output;
 				if (args[1].matches("NB")) {
-					output = (ArrayList<String>) naiveBayes(fold.train, fold.test, true);
+					output = (ArrayList<String>) naiveBayes(fold.train, fold.test, numFeatures, true);
 				}
 				else {
 					int K = getK(args[1]);
-					output = (ArrayList<String>) kNearestNeighbour(K, fold.train, fold.test, true);
+					output = (ArrayList<String>) kNearestNeighbour(K, fold.train, fold.test, numFeatures, true);
 				}
 
 				// Check the accuracy of the prediction
@@ -43,11 +49,18 @@ public class MyProgram {
 		else {
 			String learn = readEntireFile(args[0]);
 			String test = readEntireFile(args[1]);
+			String firstLine = new Scanner(learn).nextLine();
+			int numFeatures = 1;
+			for (char c : firstLine.toCharArray()) {
+				if (c == ',') {
+					numFeatures ++;
+				}
+			}
 			if (args[2].matches("NB")) {
-				naiveBayes(learn, test, false);
+				naiveBayes(learn, test, numFeatures, false);
 			} else {
 				int K = getK(args[2]);
-				kNearestNeighbour(K, learn, test, false);
+				kNearestNeighbour(K, learn, test, numFeatures, false);
 			}
 		}
 	}
@@ -65,7 +78,7 @@ public class MyProgram {
 		return contents;
 	}
 
-	private static Object kNearestNeighbour(int k, String learn, String test, boolean returnResult) throws FileNotFoundException {
+	private static Object kNearestNeighbour(int k, String learn, String test, int numFeatures, boolean returnResult) throws FileNotFoundException {
 		double neighbours[][] = new double[k][2];
 		Scanner testscan = new Scanner(test);
 		testscan.useDelimiter(",|\r\n|\n");
@@ -73,7 +86,7 @@ public class MyProgram {
 		learnscan.useDelimiter(",|\r\n|\n");
 		double curres;
 		double currdist;
-		double[] testline = new double[8];
+		double[] testline = new double[numFeatures];
 
 		ArrayList<String> output = null;
 		if (returnResult) {
@@ -83,15 +96,15 @@ public class MyProgram {
 		// Populate an array list with all the training inputs
 		ArrayList<double[]> learning = new ArrayList<double[]>();
 		while (learnscan.hasNext()) {
-			double[] learnline = new double[9];
-			for (int i = 0; i < 8; ++i) {
+			double[] learnline = new double[numFeatures+1];
+			for (int i = 0; i < numFeatures; ++i) {
 				learnline[i] = Double.parseDouble(learnscan.next());
 			}
 			String res = learnscan.next();
 			if (res.matches("yes")) {
-				learnline[8] = 1;
+				learnline[numFeatures] = 1;
 			} else {
-				learnline[8] = 0;
+				learnline[numFeatures] = 0;
 			}
 			learning.add(learnline);
 			
@@ -100,7 +113,7 @@ public class MyProgram {
 
 		//iterate the testing file
 		while (testscan.hasNext()) {
-			for (int i = 0; i < 8; ++i) {
+			for (int i = 0; i < numFeatures; ++i) {
 				testline[i] = Double.parseDouble(testscan.next());
 			}
 
@@ -108,14 +121,14 @@ public class MyProgram {
 			for (int i = 0; i < k; ++i) {
 				double[] learnline = new double[9];
 				learnline = learning.get(i);
-				neighbours[i][1] = learnline[8];
-				neighbours[i][0] = calcDistance(learnline, testline);
+				neighbours[i][1] = learnline[numFeatures];
+				neighbours[i][0] = calcDistance(learnline, testline, numFeatures);
 			}
 
 			// iterate all other lines
 			for (int j = k; j < learning.size(); ++j){
-				currdist = calcDistance(learning.get(j), testline);
-				curres = learning.get(j)[8];
+				currdist = calcDistance(learning.get(j), testline, numFeatures);
+				curres = learning.get(j)[numFeatures];
 				neighbours = newNeighbours(neighbours, currdist, curres, k);
 			}
 
@@ -166,16 +179,16 @@ public class MyProgram {
 		return neighbours;
 	}
 
-	private static double calcDistance(double[] learnline, double[] testline) {
+	private static double calcDistance(double[] learnline, double[] testline, int numFeatures) {
 		double distance = 0;
-		for (int i = 0; i < 8; ++i) {
+		for (int i = 0; i < numFeatures; ++i) {
 			distance = distance + ((learnline[i] - testline[i])*(learnline[i]-testline[i]));
 		}
 		return Math.sqrt(distance);
 
 	}
 
-	private static Object naiveBayes(String learn, String test, boolean returnResult) throws FileNotFoundException {
+	private static Object naiveBayes(String learn, String test, int numFeatures, boolean returnResult) throws FileNotFoundException {
 		Scanner scanner = new Scanner(learn);
 		scanner.useDelimiter(",|\r\n|\n");
 
@@ -185,27 +198,27 @@ public class MyProgram {
 		}
 
 		// Finding the sum of each value, according to the result
-		double[] meanyes = new double[8];
-		double[] meanno = new double[8];
-		double[] curr = new double[8];
-		double[] sdyes = new double[8];
-		double[] sdno = new double[8];
+		double[] meanyes = new double[numFeatures];
+		double[] meanno = new double[numFeatures];
+		double[] curr = new double[numFeatures];
+		double[] sdyes = new double[numFeatures];
+		double[] sdno = new double[numFeatures];
 		int totalyes = 0;
 		int totalno = 0;
 		int total = 0;
 		String result;
 		while (scanner.hasNext()) {
-			for (int i = 0; i < 8; ++i) {
+			for (int i = 0; i < numFeatures; ++i) {
 				curr[i] = Double.parseDouble(scanner.next());
 			}
 			result = scanner.next();
 			if (result.matches("yes")) {
-				for (int i = 0; i < 8; ++i) {
+				for (int i = 0; i < numFeatures; ++i) {
 					meanyes[i] = meanyes[i] + curr[i];
 				}
 				totalyes++;
 			} else {
-				for (int i = 0; i < 8; ++i) {
+				for (int i = 0; i < numFeatures; ++i) {
 					meanno[i] = meanno[i] + curr[i];
 				}
 				totalno++;
@@ -214,7 +227,7 @@ public class MyProgram {
 		}
 
 		// Calculate means
-		for (int i = 0; i < 8; ++i) {
+		for (int i = 0; i < numFeatures; ++i) {
 			meanyes[i] = meanyes[i] / totalyes;
 			meanno[i] = meanno[i] / totalno;
 		}
@@ -223,21 +236,21 @@ public class MyProgram {
 
 		// Standard deviation
 		while (scanner.hasNext()) {
-			for (int i = 0; i < 8; ++i) {
+			for (int i = 0; i < numFeatures; ++i) {
 				curr[i] = Double.parseDouble(scanner.next());
 			}
 			result = scanner.next();
 			if (result.matches("yes")) {
-				for (int i = 0; i < 8; ++i) {
+				for (int i = 0; i < numFeatures; ++i) {
 					sdyes[i] = sdyes[i] + Math.pow((curr[i] - meanyes[i]), 2);
 				}
 			} else {
-				for (int i = 0; i < 8; ++i) {
+				for (int i = 0; i < numFeatures; ++i) {
 					sdno[i] = sdno[i] + Math.pow((curr[i] - meanno[i]), 2);
 				}
 			}
 		}
-		for (int i = 0; i < 8; ++i) {
+		for (int i = 0; i < numFeatures; ++i) {
 			sdyes[i] = Math.sqrt(sdyes[i] / (totalyes - 1));
 			sdno[i] = Math.sqrt(sdno[i] / (totalno - 1));
 
@@ -254,7 +267,7 @@ public class MyProgram {
 		while (scanner.hasNext()) {
 			yesvalue = Pyes;
 			novalue = Pno;
-			for (int i = 0; i < 8; ++i) {
+			for (int i = 0; i < numFeatures; ++i) {
 				currtestval = Double.parseDouble(scanner.next());
 				yesvalue = yesvalue * probDensityFunc(currtestval, sdyes[i], meanyes[i]);
 				novalue = novalue * probDensityFunc(currtestval, sdno[i], meanno[i]);
@@ -300,7 +313,7 @@ public class MyProgram {
 		}
 	}
 
-	public static FoldPair[] getFolds() throws FileNotFoundException {
+	public static FoldPair[] getFolds(boolean useCFS) throws FileNotFoundException {
 		final int numFolds = 10;
 		FoldPair folds[] = new FoldPair[numFolds];
 		for (int i = 0; i < numFolds; i ++) {
@@ -320,6 +333,15 @@ public class MyProgram {
 				curFold = Integer.parseInt(line.substring(4)) - 1;
 			}
 			else {
+				if (useCFS) {
+					String[] splitLine = line.split(",");
+					line =  splitLine[1] + "," +
+							splitLine[4] + "," +
+							splitLine[5] + "," +
+							splitLine[6] + "," +
+							splitLine[7] + "," +
+							splitLine[8];
+				}
 				for (int i = 0; i < numFolds; i++) {
 					if (i == curFold) {
 						int commaIndex = line.lastIndexOf(',');
