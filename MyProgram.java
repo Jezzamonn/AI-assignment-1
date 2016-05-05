@@ -6,34 +6,79 @@ import java.util.Scanner;
 public class MyProgram {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		if (args.length < 3) {
+		if (args.length < 2) {
 			System.err.println(
 					"Invalid usage. You need to give 3 command line arguments. Here are some examples:\n" +
 					"$ java MyProgram pima.csv examples.csv NB\n" +
-					"$ java MyProgram pima-CFS.csv examples.csv 4NN\n\n" +
+					"$ java MyProgram pima-CFS.csv examples.csv 4NN\n" +
+					"$ java MyProgram cross-validate NB\n" +
 					"Please do better next time.");
 			System.exit(1);
 		}
-		if (args[2].matches("NB")) {
-			naiveBayes(args[0], args[1]);
-		} else {
-			int K = Integer.parseInt(args[2].substring(0, 1)); // 2
-																// digit
-																// K
-			kNearestNeighbour(K, args[0], args[1]);
+		if (args[0].equals("cross-validate")) {
+			FoldPair[] folds = getFolds();
+			int numCorrect = 0;
+			int total = 0;
+			for (FoldPair fold : folds) {
+				ArrayList<String> output;
+				if (args[1].matches("NB")) {
+					output = (ArrayList<String>) naiveBayes(fold.train, fold.test, true);
+				}
+				else {
+					int K = getK(args[1]);
+					output = (ArrayList<String>) kNearestNeighbour(K, fold.train, fold.test, true);
+				}
+
+				// Check the accuracy of the prediction
+				for (int i = 0; i < fold.testClasses.size(); i ++) {
+					if (fold.testClasses.get(i).equals(output.get(i))) {
+						numCorrect ++;
+					}
+					total ++;
+				}
+			}
+			System.out.print("Accuracy: ");
+			System.out.println(((double)numCorrect) / total);
+		}
+		else {
+			String learn = readEntireFile(args[0]);
+			String test = readEntireFile(args[1]);
+			if (args[2].matches("NB")) {
+				naiveBayes(learn, test, false);
+			} else {
+				int K = getK(args[2]);
+				kNearestNeighbour(K, learn, test, false);
+			}
 		}
 	}
 
-	private static void kNearestNeighbour(int k, String learn, String test) throws FileNotFoundException {
+	private static int getK(String knnString) {
+		String kString = knnString.substring(0, 1);
+		return Integer.parseInt(kString);
+	}
+
+	private static String readEntireFile(String fileName) throws FileNotFoundException {
+		Scanner scanner = new Scanner(new File(fileName));
+		// Use the start of the file as a delimiter.
+		scanner.useDelimiter("\\A");
+		String contents = scanner.next();
+		return contents;
+	}
+
+	private static Object kNearestNeighbour(int k, String learn, String test, boolean returnResult) throws FileNotFoundException {
 		double neighbours[][] = new double[k][2];
-		// File learnfile = new File(learn);
-		Scanner testscan = new Scanner(new File(test));
-		testscan.useDelimiter(",|\r\n");
-		Scanner learnscan = new Scanner(new File(learn));
-		learnscan.useDelimiter(",|\r\n");
+		Scanner testscan = new Scanner(test);
+		testscan.useDelimiter(",|\r\n|\n");
+		Scanner learnscan = new Scanner(learn);
+		learnscan.useDelimiter(",|\r\n|\n");
 		double curres;
 		double currdist;
 		double[] testline = new double[8];
+
+		ArrayList<String> output = null;
+		if (returnResult) {
+			output = new ArrayList<String>();
+		}
 
 		// Populate an array list with all the training inputs
 		ArrayList<double[]> learning = new ArrayList<double[]>();
@@ -85,13 +130,24 @@ public class MyProgram {
 			}
 			if (counter >= 0) {
 				System.out.println("yes");
+				if (returnResult) {
+					output.add("yes");
+				}
 			} else {
 				System.out.println("no");
+				if (returnResult) {
+					output.add("no");
+				}
 			}
 
 		}
 		testscan.close();
 		learnscan.close();
+
+		if (returnResult) {
+			return output;
+		}
+		return null;
 	}
 
 	private static double[][] newNeighbours(double[][] neighbours, double currdist, double curres, int k) {
@@ -119,9 +175,14 @@ public class MyProgram {
 
 	}
 
-	private static void naiveBayes(String learn, String test) throws FileNotFoundException {
-		Scanner scanner = new Scanner(new File(learn));
-		scanner.useDelimiter(",|\r\n");
+	private static Object naiveBayes(String learn, String test, boolean returnResult) throws FileNotFoundException {
+		Scanner scanner = new Scanner(learn);
+		scanner.useDelimiter(",|\r\n|\n");
+
+		ArrayList<String> output = null;
+		if (returnResult) {
+			output = new ArrayList<String>();
+		}
 
 		// Finding the sum of each value, according to the result
 		double[] meanyes = new double[8];
@@ -157,8 +218,8 @@ public class MyProgram {
 			meanyes[i] = meanyes[i] / totalyes;
 			meanno[i] = meanno[i] / totalno;
 		}
-		scanner = new Scanner(new File(learn));
-		scanner.useDelimiter(",|\r\n");
+		scanner = new Scanner(learn);
+		scanner.useDelimiter(",|\r\n|\n");
 
 		// Standard deviation
 		while (scanner.hasNext()) {
@@ -183,8 +244,8 @@ public class MyProgram {
 		}
 
 		// Testing time baby
-		scanner = new Scanner(new File(test));
-		scanner.useDelimiter(",|\r\n");
+		scanner = new Scanner(test);
+		scanner.useDelimiter(",|\r\n|\n");
 		double Pyes = (double) ((double) totalyes / (double) total);
 		double Pno = 1 - Pyes;
 		double yesvalue;
@@ -200,11 +261,22 @@ public class MyProgram {
 			}
 			if (novalue > yesvalue) {
 				System.out.println("no");
+				if (returnResult) {
+					output.add("no");
+				}
 			} else {
 				System.out.println("yes");
+				if (returnResult) {
+					output.add("yes");
+				}
 			}
 		}
 		scanner.close();
+
+		if (returnResult) {
+			return output;
+		}
+		return null;
 	}
 
 	private static double probDensityFunc(double currtestval, double sd, double mean) {
@@ -212,5 +284,55 @@ public class MyProgram {
 		double frac = 1 / (sd * Math.sqrt(2 * Math.PI));
 		double result = frac * Math.pow(Math.E, -power);
 		return result;
+	}
+
+	// CROSS VALIDATION
+
+	public static class FoldPair {
+		public String train;
+		public String test;
+		public ArrayList<String> testClasses;
+
+		public FoldPair() {
+			train = "";
+			test = "";
+			testClasses = new  ArrayList<String>();
+		}
+	}
+
+	public static FoldPair[] getFolds() throws FileNotFoundException {
+		final int numFolds = 10;
+		FoldPair folds[] = new FoldPair[numFolds];
+		for (int i = 0; i < numFolds; i ++) {
+			folds[i] = new FoldPair();
+		}
+
+		Scanner scanner = new Scanner(new File("pima-folds.csv"));
+
+		int curFold = -1;
+		while (scanner.hasNextLine()) {
+			String line = scanner.nextLine();
+			if (line.isEmpty()) {
+				continue;
+			}
+			else if (line.startsWith("fold")) {
+				// The folds are 1-based indexed, whereas the array is 0-based. Hence we need the - 1.
+				curFold = Integer.parseInt(line.substring(4)) - 1;
+			}
+			else {
+				for (int i = 0; i < numFolds; i++) {
+					if (i == curFold) {
+						int commaIndex = line.lastIndexOf(',');
+						folds[i].test += line.substring(0, commaIndex) + "\r\n";
+						folds[i].testClasses.add(line.substring(commaIndex+1));
+					} else {
+						folds[i].train += line + "\r\n";
+					}
+				}
+			}
+		}
+		scanner.close();
+
+		return folds;
 	}
 }
